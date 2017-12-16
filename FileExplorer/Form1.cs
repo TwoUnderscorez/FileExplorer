@@ -192,13 +192,14 @@ namespace FileExplorer
                 fswatcher.Dispose();
                 fswatcher = new FileSystemWatcher(path)
                 {
-                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.LastAccess | NotifyFilters.DirectoryName,
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.LastAccess | NotifyFilters.DirectoryName| NotifyFilters.Attributes | NotifyFilters.Size,
                     Filter = "*.*",
                     EnableRaisingEvents = true
                 };
                 fswatcher.Created += Fswatcher_DoUpdate;
                 fswatcher.Deleted += Fswatcher_DoUpdate;
                 fswatcher.Renamed += Fswatcher_DoUpdate;
+                fswatcher.Changed += Fswatcher_DoUpdate;
             }
             catch (Exception)
             {
@@ -224,12 +225,15 @@ namespace FileExplorer
                 return;
             }
             ClearColor_timer.Stop();
-            UpdateFileFolerListView(path_txt.Text);
+            if (e.ChangeType == WatcherChangeTypes.Created || e.ChangeType == WatcherChangeTypes.Renamed)
+                UpdateFileFolerListView(path_txt.Text);
             foreach (ListViewItem item in filelistView.Items)
                 if (item.Text == e.Name)
                 {
                     if (e.ChangeType == WatcherChangeTypes.Created)
                         item.BackColor = Color.LightGreen;
+                    else if (e.ChangeType == WatcherChangeTypes.Changed)
+                        item.BackColor = Color.Yellow;
                     else if (e.ChangeType == WatcherChangeTypes.Renamed)
                         item.BackColor = Color.Yellow;
                 }
