@@ -45,6 +45,7 @@
             this.preview_txt.Multiline = true;
             this.preview_txt.Name = "preview_txt";
             this.preview_txt.ReadOnly = true;
+            this.preview_txt.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.preview_txt.Size = new System.Drawing.Size(270, 229);
             this.preview_txt.TabIndex = 0;
             // 
