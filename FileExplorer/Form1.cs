@@ -23,6 +23,7 @@ namespace FileExplorer
         Previewform prev;
         private void Form1_Load(object sender, EventArgs e)
         {
+            // Get logical drive list
             foreach (var item in Directory.GetLogicalDrives())
             {
                 treeView1.Nodes.Add(item[0] + ":");
@@ -34,6 +35,7 @@ namespace FileExplorer
 
         private void treeView1_BeforeExpand(object sender, TreeViewCancelEventArgs e)
         {
+            // List directories inside a directory in the treeview
             List<string> files = new List<string>();
             string path = e.Node.FullPath + "\\";
             e.Node.Nodes.Clear();
@@ -59,11 +61,10 @@ namespace FileExplorer
         }
         private void treeView1_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            progressBar1.Style = ProgressBarStyle.Marquee;
+            // Open folder in Windows Explorer
             OpenFileFolder(e.Node.FullPath);
-            progressBar1.Style = ProgressBarStyle.Continuous;
         }
-        private void ExpandMyLitleBoys(TreeNode node, List<string> path)
+        private void ExpandTreeViewPath(TreeNode node, List<string> path)
         {
             path.RemoveAt(0);
             node.Expand();
@@ -74,10 +75,11 @@ namespace FileExplorer
             }
             foreach (TreeNode mynode in node.Nodes)
                 if (mynode.Text == path[0])
-                    ExpandMyLitleBoys(mynode, path); //recursive call
+                    ExpandTreeViewPath(mynode, path); //recursive call
         }
         private void treeView1_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
+            // Update listview with new selected dir's content
             filelistView.Items.Clear();
             string path = "";
             try
@@ -97,6 +99,7 @@ namespace FileExplorer
 
         private void path_txt_KeyDown(object sender, KeyEventArgs e)
         {
+            // Go to path on 'ENTER' press
             if(e.KeyData == Keys.Enter)
             {
                 string path = path_txt.Text;
@@ -120,6 +123,7 @@ namespace FileExplorer
 
         private void filelistView_MouseDoubleClick(object sender, MouseEventArgs e)
         {
+            // Execute file or open directory
             string path;
             if (path_txt.Text == "Computer")
                 path = treeView1.SelectedNode.FullPath.Substring(0, 2);
@@ -133,7 +137,10 @@ namespace FileExplorer
                 UpdateTreeView($"{path}\\");
             }
         }
-
+        /// <summary>
+        /// Updates the listview with the contents of a directory at the given path.
+        /// </summary>
+        /// <param name="path">Path to directory</param>
         private void UpdateFileFolerListView(string path)
         {
             ClearColor_timer.Stop();
@@ -160,6 +167,7 @@ namespace FileExplorer
                         lvi.SubItems.Add(atrib.HasFlag(FileAttributes.Temporary).ToString());
                         lvi.SubItems.Add(atrib.HasFlag(FileAttributes.Hidden).ToString());
                         lvi.SubItems.Add(((new FileInfo(item)).Length / 1000.0).ToString() + " KB");
+                        lvi.BackColor = Color.White;
                     }
                     catch (Exception)
                     {
@@ -181,6 +189,7 @@ namespace FileExplorer
                         lvi.SubItems.Add(dirinfo.Attributes.HasFlag(FileAttributes.ReadOnly).ToString());
                         lvi.SubItems.Add(dirinfo.Attributes.HasFlag(FileAttributes.Temporary).ToString());
                         lvi.SubItems.Add(dirinfo.Attributes.HasFlag(FileAttributes.Hidden).ToString());
+                        lvi.BackColor = Color.White;
                     }
                     catch (Exception)
                     {
@@ -189,6 +198,7 @@ namespace FileExplorer
                     filelistView.Items.Add(lvi);
                     filelistView.Items[filelistView.Items.Count - 1].Group = filelistView.Groups[0];
                 }
+                // Setup the file system watcher
                 fswatcher.Dispose();
                 fswatcher = new FileSystemWatcher(path)
                 {
@@ -215,6 +225,7 @@ namespace FileExplorer
 
         private void fsChanged(FileSystemEventArgs e)
         {
+            // Does all the color stuff
             if (e.ChangeType == WatcherChangeTypes.Deleted)
             {
                 DeleteFiles_timer.Stop();
@@ -228,7 +239,7 @@ namespace FileExplorer
             if (e.ChangeType == WatcherChangeTypes.Created || e.ChangeType == WatcherChangeTypes.Renamed)
                 UpdateFileFolerListView(path_txt.Text);
             foreach (ListViewItem item in filelistView.Items)
-                if (item.Text == e.Name)
+                if (item.Text == e.Name && item.BackColor == Color.White)
                 {
                     if (e.ChangeType == WatcherChangeTypes.Created)
                         item.BackColor = Color.LightGreen;
@@ -239,7 +250,10 @@ namespace FileExplorer
                 }
             ClearColor_timer.Start();
         }
-
+        /// <summary>
+        /// Updates the treeview to show a certain path
+        /// </summary>
+        /// <param name="path"></param>
         private void UpdateTreeView(string path)
         {
             if (!path.EndsWith("\\"))
@@ -247,8 +261,12 @@ namespace FileExplorer
             var path_list = path.Split('\\').ToList();
             foreach (TreeNode node in treeView1.Nodes)
                 if (node.Text == path_list[0])
-                    ExpandMyLitleBoys(node, path_list);
+                    ExpandTreeViewPath(node, path_list);
         }
+        /// <summary>
+        /// If path is a file, executes the file, if it's a folder, opens the folder in Windwos Explorer
+        /// </summary>
+        /// <param name="path"></param>
         private void OpenFileFolder(string path)
         {
             try
@@ -293,16 +311,9 @@ namespace FileExplorer
             dialog.ShowDialog();
         }
 
-        private void button3_Click(object sender, EventArgs e)
-        {
-            if (filelistView.SelectedItems.Count < 1)
-                return;
-            string path = path_txt.Text + filelistView.SelectedItems[0].SubItems[0].Text;
-            
-        }
-
         private void button1_Click(object sender, EventArgs e)
         {
+            // Delete selected files and folders
             if (filelistView.SelectedItems.Count < 1)
                 return;
             string path;
@@ -337,12 +348,14 @@ namespace FileExplorer
 
         private void button2_Click(object sender, EventArgs e)
         {
+            // New folder
             var dialog = new NewFileDialog("\\", path_txt.Text);
             dialog.ShowDialog();
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
+            // cd ..
             try
             {
                 string path = $"{treeView1.SelectedNode.Parent.FullPath}\\";
@@ -355,6 +368,7 @@ namespace FileExplorer
 
         private void DeleteFiles_timer_Tick(object sender, EventArgs e)
         {
+            // removes all red colored items from the list
             foreach (ListViewItem item in filelistView.Items)
                 if (item.BackColor == Color.Red)
                     filelistView.Items.Remove(item);
@@ -362,16 +376,11 @@ namespace FileExplorer
 
         private void ClearColor_timer_Tick(object sender, EventArgs e)
         {
+            // Clears the color of green and yellow colored items
             foreach (ListViewItem item in filelistView.Items)
                 if (item.BackColor == Color.LightGreen || item.BackColor == Color.Yellow )
                     item.BackColor = Color.White;
         }
-
-        private void button3_Click_1(object sender, EventArgs e)
-        {
-
-        }
-
         private void preview_btn_Click(object sender, EventArgs e)
         {
             if (preview_btn.Checked)
@@ -382,7 +391,7 @@ namespace FileExplorer
 
         private void filelistView_MouseClick(object sender, MouseEventArgs e)
         {
-            if (preview_btn.Checked)
+            if (preview_btn.Checked) // update preview if it's enabled 
             {
                 try
                 {
